@@ -1,0 +1,17 @@
+[package]
+name = "raptorq_metal_wrap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+raptorq = {git = "https://github.com/Alzymologist/raptorq", rev = "99f99972e96787a98c4f6e6ee77aafe7a03e29d1", default-features = false, features = ["foot_gun"]}
+
+[dev-dependencies]
+rand = "0.8.4"
+
+[features]
+default = ["std"]
+std = []
