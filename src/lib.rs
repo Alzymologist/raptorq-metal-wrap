@@ -21,8 +21,7 @@ use core::iter;
 use raptorq::{partition, EncodingPacket, ObjectTransmissionInformation, SourceBlockDecoder};
 
 pub trait LimitedDecoderMemory<A: ExternalAddress> {
-    const PACKET_SIZE: u16;
-    const PACKET_WITH_ID_SIZE: u16 = Self::PACKET_SIZE + 4;
+    const PACKET_SIZE: u16; // must be `8*n + 4` to match actual packet length
     const DECODER_MEMORY: u64;
     fn write_external(&mut self, address: &A, data: &[u8]);
     fn read_external(&mut self, address: &A, len: usize) -> Vec<u8>;
@@ -68,7 +67,7 @@ impl<A: ExternalAddress> BlockDecodersMetal<A> {
     {
         let mut repair_packets: Vec<EncodingPacket> = Vec::new();
         for address in self.set_sbd[i].repair_packets_storage.iter() {
-            let packet_data = lm.read_external(address, L::PACKET_WITH_ID_SIZE as usize);
+            let packet_data = lm.read_external(address, L::PACKET_SIZE as usize);
             let packet = EncodingPacket::deserialize(&packet_data);
             repair_packets.push(packet);
         }
@@ -93,8 +92,7 @@ impl<A: ExternalAddress> BlockDecodersMetal<A> {
                     let current_address = self.next_address_to_use;
                     lm.write_external(&current_address, &serialized_packet_data);
                     self.set_sbd[i].repair_packets_storage.push(current_address);
-                    self.next_address_to_use
-                        .shift(L::PACKET_WITH_ID_SIZE as usize);
+                    self.next_address_to_use.shift(L::PACKET_SIZE as usize);
                 }
                 let mut new_sbd_husk_i = source_block_decoder_i;
                 new_sbd_husk_i.repair_packets = Vec::new();
@@ -220,7 +218,7 @@ mod test {
     static mut EM: [u8; 2_000_000] = [0u8; 2_000_000];
 
     impl LimitedDecoderMemory<Position> for ExternalMemoryMock {
-        const PACKET_SIZE: u16 = 248;
+        const PACKET_SIZE: u16 = 244;
         const DECODER_MEMORY: u64 = 4096;
         fn write_external(&mut self, address: &Position, data: &[u8]) {
             unsafe {
